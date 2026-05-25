@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -12,6 +13,7 @@ const webhookURL = "https://umore.serveousercontent.com"
 
 func main() {
 	http.HandleFunc("GET /handler", handler)
+	http.HandleFunc("POST /", update)
 
 	s := &http.Server{
 		Addr: ":8080",
@@ -29,4 +31,24 @@ func handler(w http.ResponseWriter, r *http.Request) {
 func setWebhook() {
 	c := client.NewClient()
 	c.SetWebhook(webhookURL)
+}
+
+func update(w http.ResponseWriter, r *http.Request) {
+	defer r.Body.Close()
+
+	type update struct {
+		Message struct {
+			Text string `json:"text"`
+		} `json:"message"`
+	}
+
+	decoder := json.NewDecoder(r.Body)
+	params := update{}
+	err := decoder.Decode(&params)
+	if err != nil {
+		log.Printf("Error decoding parameters: %s", err)
+		return
+	}
+
+	fmt.Println(params.Message.Text)
 }
