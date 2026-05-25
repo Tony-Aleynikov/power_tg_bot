@@ -1,13 +1,14 @@
 package main
 
 import (
-	"crypto/tls"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
-	"time"
+
+	"github.com/power_tg_bot/client"
 )
+
+const webhookURL = "https://umore.serveousercontent.com"
 
 func main() {
 	http.HandleFunc("GET /handler", handler)
@@ -15,37 +16,17 @@ func main() {
 	s := &http.Server{
 		Addr: ":8080",
 	}
-
+	setWebhook()
 	fmt.Println("Listening on port 8080")
 	log.Fatal(s.ListenAndServe()) // почему именно log.Fatal
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	token := "7121104577:AAG9TuCKKVJvCRVp7EzQ8rl-wBIgNwFLUzk"
-	ip := "149.154.167.220"
+	c := client.NewClient()
+	c.GetMe(w)
+}
 
-	c := &http.Client{
-		Timeout: 10 * time.Second,
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				ServerName: "api.telegram.org",
-			},
-		},
-	}
-
-	req, err := http.NewRequest(http.MethodGet, "https://"+ip+"/bot"+token+"/getMe", nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Host = "api.telegram.org"
-
-	resp, err := c.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	b, _ := io.ReadAll(resp.Body)
-	fmt.Println(string(b))
-	w.WriteHeader(resp.StatusCode)
+func setWebhook() {
+	c := client.NewClient()
+	c.SetWebhook(webhookURL)
 }
