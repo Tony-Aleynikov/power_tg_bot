@@ -8,12 +8,10 @@ import (
 )
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /handler", handler)
+	http.HandleFunc("GET /handler", handler)
 
 	s := &http.Server{
-		Addr:    ":8080",
-		Handler: mux,
+		Addr: ":8080",
 	}
 
 	fmt.Println("Listening on port 8080")
