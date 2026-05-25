@@ -11,7 +11,6 @@ import (
 
 func main() {
 	http.HandleFunc("GET /handler", handler)
-	http.HandleFunc("GET /getme", getMeHandler)
 
 	s := &http.Server{
 		Addr: ":8080",
@@ -22,16 +21,6 @@ func main() {
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
-	body, err := io.ReadAll(r.Body)
-	if err != nil {
-		fmt.Println("Err")
-		return
-	}
-	defer r.Body.Close()
-	fmt.Println(string(body))
-}
-
-func getMeHandler(w http.ResponseWriter, r *http.Request) {
 	token := "7121104577:AAG9TuCKKVJvCRVp7EzQ8rl-wBIgNwFLUzk"
 	ip := "149.154.167.220"
 
@@ -58,4 +47,5 @@ func getMeHandler(w http.ResponseWriter, r *http.Request) {
 
 	b, _ := io.ReadAll(resp.Body)
 	fmt.Println(string(b))
+	w.WriteHeader(resp.StatusCode)
 }
