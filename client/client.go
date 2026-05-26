@@ -36,7 +36,6 @@ func NewClient() client {
 
 func (client client) SetWebhook(url string) {
 	c := client.client
-
 	payload := struct {
 		URL                string   `json:"url"`
 		AllowedUpdates     []string `json:"allowed_updates"`
@@ -47,78 +46,87 @@ func (client client) SetWebhook(url string) {
 		DropPendingUpdates: os.Getenv("TG_BOT_FORCE_SET_WEBHOOK") == "1",
 	}
 
-	bodyJSON, err := json.Marshal(payload)
-	if err != nil {
-		panic(err)
-	}
+	requestUrl := "https://" + ip + "/bot" + token + "/setWebhook"
+	method := "POST"
+	headers := map[string]string{}
+	headers["Content-Type"] = "application/json"
+	body := makeBody(payload)
+	request := makeRequest(requestUrl, method, headers, body)
+	response := doRequest(request, c)
+	defer response.Body.Close()
 
-	req, err := http.NewRequest(http.MethodPost, "https://"+ip+"/bot"+token+"/setWebhook", bytes.NewReader(bodyJSON))
-	if err != nil {
-		panic(err)
-	}
-	req.Host = "api.telegram.org"
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
-
-	b, _ := io.ReadAll(resp.Body)
+	b, _ := io.ReadAll(response.Body)
 	fmt.Println(string(b))
 	fmt.Println("Webhook set successfully")
 }
 
 func (client client) GetMe(w http.ResponseWriter) {
 	c := client.client
-	req, err := http.NewRequest(http.MethodGet, "https://"+ip+"/bot"+token+"/getMe", nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Host = "api.telegram.org"
 
-	resp, err := c.Do(req)
-	if err != nil {
-		panic(err)
-	}
-	defer resp.Body.Close()
+	requestUrl := "https://" + ip + "/bot" + token + "/getMe"
+	method := "GET"
+	headers := map[string]string{}
+	headers["Content-Type"] = "application/json"
+	request := makeRequest(requestUrl, method, headers, nil)
+	response := doRequest(request, c)
+	defer response.Body.Close()
 
-	b, _ := io.ReadAll(resp.Body)
+	b, _ := io.ReadAll(response.Body)
 	fmt.Println(string(b))
-	w.WriteHeader(resp.StatusCode)
+	w.WriteHeader(response.StatusCode)
 }
 
-func (client client) SendMessage(chaiId int, text string) {
+func (client client) SendMessage(chatId int, text string) {
 	c := client.client
 	requestBody := struct {
 		ChatID string `json:"chat_id"`
 		Text   string `json:"text"`
 	}{
-		ChatID: strconv.Itoa(chaiId),
+		ChatID: strconv.Itoa(chatId),
 		Text:   text,
 	}
 
-	jsonData, err := json.Marshal(requestBody)
+	requestUrl := "https://" + ip + "/bot" + token + "/sendMessage"
+	method := "POST"
+	headers := map[string]string{}
+	headers["Content-Type"] = "application/json"
+	body := makeBody(requestBody)
+	request := makeRequest(requestUrl, method, headers, body)
+	response := doRequest(request, c)
+	defer response.Body.Close()
+
+	b, _ := io.ReadAll(response.Body)
+	fmt.Println(string(b))
+}
+
+func makeBody(body any) []byte {
+	b, err := json.Marshal(body)
 	if err != nil {
 		fmt.Errorf("ошибка создания JSON: %w", err)
-		return
+		return nil
 	}
+	return b
+}
 
-	req, err := http.NewRequest(http.MethodPost, "https://"+ip+"/bot"+token+"/sendMessage", bytes.NewReader(jsonData))
+func makeRequest(url string, method string, headers map[string]string, body []byte) *http.Request {
+	req, err := http.NewRequest(method, url, bytes.NewReader(body))
 	if err != nil {
 		fmt.Errorf("ошибка создания запроса: %w", err)
-		return
+		return nil
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 	req.Host = "api.telegram.org"
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.Do(req)
+	return req
+}
+
+func doRequest(request *http.Request, client *http.Client) *http.Response {
+	resp, err := client.Do(request)
 	if err != nil {
-		panic(err)
+		fmt.Errorf("Ошибка в выполнении запроса: %w", err)
+		return nil
 	}
-	defer resp.Body.Close()
-
-	b, _ := io.ReadAll(resp.Body)
-	fmt.Println(string(b))
+	return resp
 }
