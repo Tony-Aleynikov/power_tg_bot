@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 )
@@ -35,9 +36,17 @@ func NewClient() client {
 
 func (client client) SetWebhook(url string) {
 	c := client.client
-	payload := map[string]string{
-		"url": url,
+
+	payload := struct {
+		URL                string   `json:"url"`
+		AllowedUpdates     []string `json:"allowed_updates"`
+		DropPendingUpdates bool     `json:"drop_pending_updates"`
+	}{
+		URL:                url,
+		AllowedUpdates:     []string{"message", "callback_query"},
+		DropPendingUpdates: os.Getenv("TG_BOT_FORCE_SET_WEBHOOK") == "1",
 	}
+
 	bodyJSON, err := json.Marshal(payload)
 	if err != nil {
 		panic(err)
@@ -96,8 +105,7 @@ func (client client) SendMessage(chaiId int, text string) {
 		return
 	}
 
-	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
-	req, err := http.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest(http.MethodPost, "https://"+ip+"/bot"+token+"/sendMessage", bytes.NewReader(jsonData))
 	if err != nil {
 		fmt.Errorf("ошибка создания запроса: %w", err)
 		return
