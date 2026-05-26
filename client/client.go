@@ -46,7 +46,7 @@ func (client client) SetWebhook(url string) {
 		DropPendingUpdates: os.Getenv("TG_BOT_FORCE_SET_WEBHOOK") == "1",
 	}
 
-	requestUrl := "https://" + ip + "/bot" + token + "/setWebhook"
+	requestUrl := "/setWebhook"
 	method := "POST"
 	headers := map[string]string{}
 	headers["Content-Type"] = "application/json"
@@ -63,7 +63,7 @@ func (client client) SetWebhook(url string) {
 func (client client) GetMe(w http.ResponseWriter) {
 	c := client.client
 
-	requestUrl := "https://" + ip + "/bot" + token + "/getMe"
+	requestUrl := "/getMe"
 	method := "GET"
 	headers := map[string]string{}
 	headers["Content-Type"] = "application/json"
@@ -86,7 +86,7 @@ func (client client) SendMessage(chatId int, text string) {
 		Text:   text,
 	}
 
-	requestUrl := "https://" + ip + "/bot" + token + "/sendMessage"
+	requestUrl := "/sendMessage"
 	method := "POST"
 	headers := map[string]string{}
 	headers["Content-Type"] = "application/json"
@@ -109,7 +109,8 @@ func makeBody(body any) []byte {
 }
 
 func makeRequest(url string, method string, headers map[string]string, body []byte) *http.Request {
-	req, err := http.NewRequest(method, url, bytes.NewReader(body))
+	baseUrl := "https://" + ip + "/bot" + token
+	req, err := http.NewRequest(method, baseUrl+url, bytes.NewReader(body))
 	if err != nil {
 		fmt.Errorf("ошибка создания запроса: %w", err)
 		return nil
