@@ -10,24 +10,25 @@ type repository struct {
 	filePath string
 }
 
-func NewRepository() repository {
+func NewRepository() (repository, error) {
+	if os.Getenv("FILE_LOCATION") == "" {
+		return repository{}, fmt.Errorf("Не задан FILE_LOCATION")
+	}
+
+	_, err := os.Stat(os.Getenv("FILE_LOCATION"))
+	if os.IsNotExist(err) {
+		return repository{}, fmt.Errorf("Файл не существует")
+	}
+
 	return repository{
 		filePath: os.Getenv("FILE_LOCATION"),
-	}
+	}, nil
 }
 
 func (r repository) Save(data any) error {
 	jsonData, err := json.Marshal(data)
 	if err != nil {
 		return fmt.Errorf("ошибка создания JSON: %w", err)
-	}
-	if r.filePath == "" {
-		return fmt.Errorf("Не задан filePath")
-	}
-
-	_, err = os.Stat(r.filePath)
-	if os.IsNotExist(err) {
-		return fmt.Errorf("Файл не существует")
 	}
 
 	err = os.WriteFile(r.filePath, jsonData, 0644)
