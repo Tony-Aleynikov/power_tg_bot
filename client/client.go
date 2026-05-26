@@ -35,8 +35,7 @@ func NewClient() client {
 }
 
 func (client client) SetWebhook(url string) error {
-	c := client.client
-	payload := struct {
+	bodyData := struct {
 		URL                string   `json:"url"`
 		AllowedUpdates     []string `json:"allowed_updates"`
 		DropPendingUpdates bool     `json:"drop_pending_updates"`
@@ -45,79 +44,59 @@ func (client client) SetWebhook(url string) error {
 		AllowedUpdates:     []string{"message", "callback_query"},
 		DropPendingUpdates: os.Getenv("TG_BOT_FORCE_SET_WEBHOOK") == "1",
 	}
-	headers := map[string]string{"Content-Type": "application/json"}
-	body, err := makeBody(payload)
-	if err != nil {
-		return err
-	}
-	request, err := makeRequest("/setWebhook", "POST", headers, body)
-	if err != nil {
-		return err
-	}
-	response, err := doRequest(request, c)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
 
-	b, _ := io.ReadAll(response.Body)
-	fmt.Println(string(b))
+	_, err := client.do("/setWebhook", bodyData)
+	if err != nil {
+		return err
+	}
 	fmt.Println("Webhook set successfully")
 	return nil
 }
 
 func (client client) GetMe(w http.ResponseWriter) error {
-	c := client.client
-	headers := map[string]string{"Content-Type": "application/json"}
-	request, err := makeRequest("/getMe", "GET", headers, nil)
+	response, err := client.do("/getMe", nil)
 	if err != nil {
 		return err
 	}
-	response, err := doRequest(request, c)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-
-	b, err := io.ReadAll(response.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(string(b))
 	w.WriteHeader(response.StatusCode)
 	return nil
 }
 
 func (client client) SendMessage(chatId int, text string) error {
-	c := client.client
-	requestBody := struct {
+	bodyData := struct {
 		ChatID string `json:"chat_id"`
 		Text   string `json:"text"`
 	}{
 		ChatID: strconv.Itoa(chatId),
 		Text:   text,
 	}
+
+	_, err := client.do("/sendMessage", bodyData)
+	return err
+}
+
+func (c client) do(method string, bodyData any) (*http.Response, error) {
 	headers := map[string]string{"Content-Type": "application/json"}
-	body, err := makeBody(requestBody)
+	body, err := makeBody(bodyData)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	request, err := makeRequest("/sendMessage", "POST", headers, body)
+	request, err := makeRequest(method, "POST", headers, body)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	response, err := doRequest(request, c)
+	response, err := doRequest(request, c.client)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer response.Body.Close()
 
 	b, err := io.ReadAll(response.Body)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	fmt.Println(string(b))
-	return nil
+	return response, nil
 }
 
 func makeBody(body any) ([]byte, error) {
