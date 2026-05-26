@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/power_tg_bot/client"
 )
 
-const webhookURL = "https://deep-sheep-worry.loca.lt"
+var webhookURL = os.Getenv("webhookURL")
 
 func main() {
 	http.HandleFunc("GET /handler", handler)
