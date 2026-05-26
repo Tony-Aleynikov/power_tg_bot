@@ -149,8 +149,3 @@ func doRequest(request *http.Request, client *http.Client) (*http.Response, erro
 	}
 	return resp, nil
 }
-
-func ReturnError(e error, w http.ResponseWriter) {
-	fmt.Println(e)
-	w.WriteHeader(500)
-}

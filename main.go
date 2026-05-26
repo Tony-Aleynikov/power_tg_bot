@@ -27,7 +27,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	c := client.NewClient()
 	err := c.GetMe(w)
 	if err != nil {
-		client.ReturnError(err, w)
+		returnError(err, w)
 	}
 }
 
@@ -55,7 +55,7 @@ func update(w http.ResponseWriter, r *http.Request) {
 	params := update{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		client.ReturnError(err, w)
+		returnError(err, w)
 		return
 	}
 
@@ -65,8 +65,13 @@ func update(w http.ResponseWriter, r *http.Request) {
 	c := client.NewClient()
 	err = c.SendMessage(params.Message.Chat.ID, params.Message.Text)
 	if err != nil {
-		client.ReturnError(err, w)
+		returnError(err, w)
 		return
 	}
 	fmt.Println("message was sended")
+}
+
+func returnError(e error, w http.ResponseWriter) {
+	fmt.Println(e)
+	w.WriteHeader(500)
 }
