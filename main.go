@@ -9,7 +9,7 @@ import (
 	"github.com/power_tg_bot/client"
 )
 
-const webhookURL = "https://umore.serveousercontent.com"
+const webhookURL = "https://deep-sheep-worry.loca.lt"
 
 func main() {
 	http.HandleFunc("GET /handler", handler)
