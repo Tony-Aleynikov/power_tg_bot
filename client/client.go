@@ -72,10 +72,7 @@ func (client client) SendMessage(chatId int, text string) error {
 	}
 
 	_, err := client.do("/sendMessage", bodyData)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func (c client) do(method string, bodyData any) (*http.Response, error) {
