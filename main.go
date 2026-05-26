@@ -38,6 +38,9 @@ func update(w http.ResponseWriter, r *http.Request) {
 
 	type update struct {
 		Message struct {
+			Chat struct {
+				ID int `json:"id"`
+			} `json:"chat"`
 			Text string `json:"text"`
 		} `json:"message"`
 	}
@@ -51,4 +54,9 @@ func update(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Println(params.Message.Text)
+	fmt.Println(params.Message.Chat.ID)
+
+	c := client.NewClient()
+	c.SendMessage(params.Message.Chat.ID, params.Message.Text)
+	fmt.Println("message was sended")
 }
