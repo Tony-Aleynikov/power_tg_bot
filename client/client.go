@@ -45,13 +45,10 @@ func (client client) SetWebhook(url string) {
 		AllowedUpdates:     []string{"message", "callback_query"},
 		DropPendingUpdates: os.Getenv("TG_BOT_FORCE_SET_WEBHOOK") == "1",
 	}
-
-	requestUrl := "/setWebhook"
-	method := "POST"
 	headers := map[string]string{}
 	headers["Content-Type"] = "application/json"
 	body := makeBody(payload)
-	request := makeRequest(requestUrl, method, headers, body)
+	request := makeRequest("/setWebhook", "POST", headers, body)
 	response := doRequest(request, c)
 	defer response.Body.Close()
 
@@ -62,12 +59,9 @@ func (client client) SetWebhook(url string) {
 
 func (client client) GetMe(w http.ResponseWriter) {
 	c := client.client
-
-	requestUrl := "/getMe"
-	method := "GET"
 	headers := map[string]string{}
 	headers["Content-Type"] = "application/json"
-	request := makeRequest(requestUrl, method, headers, nil)
+	request := makeRequest("/getMe", "GET", headers, nil)
 	response := doRequest(request, c)
 	defer response.Body.Close()
 
@@ -85,13 +79,10 @@ func (client client) SendMessage(chatId int, text string) {
 		ChatID: strconv.Itoa(chatId),
 		Text:   text,
 	}
-
-	requestUrl := "/sendMessage"
-	method := "POST"
 	headers := map[string]string{}
 	headers["Content-Type"] = "application/json"
 	body := makeBody(requestBody)
-	request := makeRequest(requestUrl, method, headers, body)
+	request := makeRequest("/sendMessage", "POST", headers, body)
 	response := doRequest(request, c)
 	defer response.Body.Close()
 
