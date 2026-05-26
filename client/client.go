@@ -12,10 +12,9 @@ import (
 	"time"
 )
 
-const (
-	token = "7121104577:AAG9TuCKKVJvCRVp7EzQ8rl-wBIgNwFLUzk"
-	ip    = "149.154.167.220"
-)
+const ip = "149.154.167.220"
+
+var token = os.Getenv("TOKEN")
 
 type client struct {
 	client *http.Client
