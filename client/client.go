@@ -34,9 +34,8 @@ func NewClient() client {
 	}
 }
 
-func (client client) SetWebhook(url string) {
+func (client client) SetWebhook(url string) error {
 	c := client.client
-
 	payload := struct {
 		URL                string   `json:"url"`
 		AllowedUpdates     []string `json:"allowed_updates"`
@@ -46,79 +45,107 @@ func (client client) SetWebhook(url string) {
 		AllowedUpdates:     []string{"message", "callback_query"},
 		DropPendingUpdates: os.Getenv("TG_BOT_FORCE_SET_WEBHOOK") == "1",
 	}
-
-	bodyJSON, err := json.Marshal(payload)
+	headers := map[string]string{"Content-Type": "application/json"}
+	body, err := makeBody(payload)
 	if err != nil {
-		panic(err)
+		return err
 	}
-
-	req, err := http.NewRequest(http.MethodPost, "https://"+ip+"/bot"+token+"/setWebhook", bytes.NewReader(bodyJSON))
+	request, err := makeRequest("/setWebhook", "POST", headers, body)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	req.Host = "api.telegram.org"
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.Do(req)
+	response, err := doRequest(request, c)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
-	b, _ := io.ReadAll(resp.Body)
+	b, _ := io.ReadAll(response.Body)
 	fmt.Println(string(b))
 	fmt.Println("Webhook set successfully")
+	return nil
 }
 
-func (client client) GetMe(w http.ResponseWriter) {
+func (client client) GetMe(w http.ResponseWriter) error {
 	c := client.client
-	req, err := http.NewRequest(http.MethodGet, "https://"+ip+"/bot"+token+"/getMe", nil)
+	headers := map[string]string{"Content-Type": "application/json"}
+	request, err := makeRequest("/getMe", "GET", headers, nil)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	req.Host = "api.telegram.org"
-
-	resp, err := c.Do(req)
+	response, err := doRequest(request, c)
 	if err != nil {
-		panic(err)
+		return err
 	}
-	defer resp.Body.Close()
+	defer response.Body.Close()
 
-	b, _ := io.ReadAll(resp.Body)
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
 	fmt.Println(string(b))
-	w.WriteHeader(resp.StatusCode)
+	w.WriteHeader(response.StatusCode)
+	return nil
 }
 
-func (client client) SendMessage(chaiId int, text string) {
+func (client client) SendMessage(chatId int, text string) error {
 	c := client.client
 	requestBody := struct {
 		ChatID string `json:"chat_id"`
 		Text   string `json:"text"`
 	}{
-		ChatID: strconv.Itoa(chaiId),
+		ChatID: strconv.Itoa(chatId),
 		Text:   text,
 	}
-
-	jsonData, err := json.Marshal(requestBody)
+	headers := map[string]string{"Content-Type": "application/json"}
+	body, err := makeBody(requestBody)
 	if err != nil {
-		fmt.Errorf("ошибка создания JSON: %w", err)
-		return
+		return err
 	}
-
-	req, err := http.NewRequest(http.MethodPost, "https://"+ip+"/bot"+token+"/sendMessage", bytes.NewReader(jsonData))
+	request, err := makeRequest("/sendMessage", "POST", headers, body)
 	if err != nil {
-		fmt.Errorf("ошибка создания запроса: %w", err)
-		return
+		return err
+	}
+	response, err := doRequest(request, c)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	b, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(b))
+	return nil
+}
+
+func makeBody(body any) ([]byte, error) {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания JSON: %w", err)
+	}
+	return b, nil
+}
+
+func makeRequest(url string, method string, headers map[string]string, body []byte) (*http.Request, error) {
+	baseUrl := "https://" + ip + "/bot" + token
+	req, err := http.NewRequest(method, baseUrl+url, bytes.NewReader(body))
+	if err != nil {
+		return nil, fmt.Errorf("ошибка создания запроса: %w", err)
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 	req.Host = "api.telegram.org"
-	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := c.Do(req)
+	return req, nil
+}
+
+func doRequest(request *http.Request, client *http.Client) (*http.Response, error) {
+	resp, err := client.Do(request)
 	if err != nil {
-		panic(err)
+		return nil, fmt.Errorf("Ошибка в выполнении запроса: %w", err)
 	}
-	defer resp.Body.Close()
-
-	b, _ := io.ReadAll(resp.Body)
-	fmt.Println(string(b))
+	return resp, nil
 }

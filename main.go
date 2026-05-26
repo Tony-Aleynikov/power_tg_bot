@@ -25,12 +25,18 @@ func main() {
 
 func handler(w http.ResponseWriter, r *http.Request) {
 	c := client.NewClient()
-	c.GetMe(w)
+	err := c.GetMe(w)
+	if err != nil {
+		returnError(err, w)
+	}
 }
 
 func setWebhook() {
 	c := client.NewClient()
-	c.SetWebhook(webhookURL)
+	err := c.SetWebhook(webhookURL)
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func update(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +55,7 @@ func update(w http.ResponseWriter, r *http.Request) {
 	params := update{}
 	err := decoder.Decode(&params)
 	if err != nil {
-		log.Printf("Error decoding parameters: %s", err)
+		returnError(err, w)
 		return
 	}
 
@@ -57,6 +63,15 @@ func update(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(params.Message.Chat.ID)
 
 	c := client.NewClient()
-	c.SendMessage(params.Message.Chat.ID, params.Message.Text)
+	err = c.SendMessage(params.Message.Chat.ID, params.Message.Text)
+	if err != nil {
+		returnError(err, w)
+		return
+	}
 	fmt.Println("message was sended")
+}
+
+func returnError(e error, w http.ResponseWriter) {
+	fmt.Println(e)
+	w.WriteHeader(500)
 }
