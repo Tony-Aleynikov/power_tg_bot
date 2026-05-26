@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/power_tg_bot/client"
 )
@@ -13,8 +12,6 @@ import (
 const webhookURL = "https://deep-sheep-worry.loca.lt"
 
 func main() {
-	os.Setenv("FILE_LOCATION", "repository/repository.json")
-
 	http.HandleFunc("GET /handler", handler)
 	http.HandleFunc("POST /", update)
 
