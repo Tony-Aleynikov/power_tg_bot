@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -77,4 +78,39 @@ func (client client) GetMe(w http.ResponseWriter) {
 	b, _ := io.ReadAll(resp.Body)
 	fmt.Println(string(b))
 	w.WriteHeader(resp.StatusCode)
+}
+
+func (client client) SendMessage(chaiId int, text string) {
+	c := client.client
+	requestBody := struct {
+		ChatID string `json:"chat_id"`
+		Text   string `json:"text"`
+	}{
+		ChatID: strconv.Itoa(chaiId),
+		Text:   text,
+	}
+
+	jsonData, err := json.Marshal(requestBody)
+	if err != nil {
+		fmt.Errorf("ошибка создания JSON: %w", err)
+		return
+	}
+
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
+	req, err := http.NewRequest(http.MethodPost, apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		fmt.Errorf("ошибка создания запроса: %w", err)
+		return
+	}
+	req.Host = "api.telegram.org"
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.Do(req)
+	if err != nil {
+		panic(err)
+	}
+	defer resp.Body.Close()
+
+	b, _ := io.ReadAll(resp.Body)
+	fmt.Println(string(b))
 }
